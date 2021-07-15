@@ -1,16 +1,15 @@
 #!/bin/bash
 
-auth_email=""                                      # The email used to login 'https://dash.cloudflare.com'
-auth_key=""                                        # Top right corner, "My profile" > "Global API Key"
+auth_key=""                                        # Top right corner, "My profile" > "API Tokens" > "Create Token" > "Edit zone DNS" > "Use template"
 zone_identifier=""                                 # Can be found in the "Overview" tab of your domain
 record_name=""                                     # Which record you want to be synced
-proxy=true                                         # Set the proxy to true or false 
+proxy=true                                         # Set the proxy to true or false
 
 ###########################################
 ## Check if we have an public IP
 ###########################################
 ip=$(curl -s https://api.ipify.org || curl -s https://ipv4.icanhazip.com/)
-if [ "${ip}" == "" ]; then 
+if [ "${ip}" == "" ]; then
   message="No public IP found."
   >&2 echo -e "${message}" >> ~/log
   exit 1
@@ -20,7 +19,9 @@ fi
 ## Seek for the A record
 ###########################################
 echo " Check Initiated" >> ~/log
-record=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/$zone_identifier/dns_records?name=$record_name" -H "X-Auth-Email: $auth_email" -H "X-Auth-Key: $auth_key" -H "Content-Type: application/json")
+record=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/$zone_identifier/dns_records?name=$record_name" \
+        -H "Authorization: Bearer $auth_key" \
+        -H "Content-Type: application/json")
 
 ###########################################
 ## Check if the domaine has an A record
@@ -32,7 +33,7 @@ if [[ $record == *"\"count\":0"* ]]; then
 fi
 
 ###########################################
-## Get the existing IP 
+## Get the existing IP
 ###########################################
 old_ip=$(echo "$record" | grep -Po '(?<="content":")[^"]*' | head -1)
 # Compare if they're the same
@@ -50,9 +51,8 @@ record_identifier=$(echo "$record" | grep -Po '(?<="id":")[^"]*' | head -1)
 ###########################################
 ## Change the IP@Cloudflare using the API
 ###########################################
-update=$(curl -s -X PUT "https://api.cloudflare.com/client/v4/zones/$zone_identifier/dns_records/$record_identifier" \
-                     -H "X-Auth-Email: $auth_email" \
-                     -H "X-Auth-Key: $auth_key" \
+update=$(curl -s -L -X PUT "https://api.cloudflare.com/client/v4/zones/$zone_identifier/dns_records/$record_identifier" \
+                     -H "Authorization: Bearer $auth_key" \
                      -H "Content-Type: application/json" \
               --data "{\"id\":\"$zone_identifier\",\"type\":\"A\",\"proxied\":${proxy},\"name\":\"$record_name\",\"content\":\"$ip\"}")
 
