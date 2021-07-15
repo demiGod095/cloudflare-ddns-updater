@@ -2,10 +2,15 @@
 
 This script is used to update dynamic DNS entries for accounts on Cloudflare.
 
+# This fork
+
+This particular fork of the original repository is an update for the original repo where I use an API Token that can be scoped to Edit DNS Zone only.
+You don't need to create a Global API key anymore.
+
 ## Installation
 
 ```bash
-git clone https://github.com/K0p1-Git/cloudflare-ddns-updater.git
+git clone https://github.com/demiGod095/cloudflare-ddns-updater.git
 ```
 
 ## Usage
